@@ -1,0 +1,31 @@
+{
+  "configurations": [
+    {
+      "name": "Android",
+      "includePath": [
+        "${workspaceFolder}/**",
+        "${env:ANDROID_NDK_HOME}/sources/cxx-stl/llvm-libc++/include",
+        "${env:ANDROID_NDK_HOME}/sysroot/usr/include",
+        "${env:ANDROID_NDK_HOME}/sysroot/usr/include/arm-linux-androideabi",
+        "${workspaceFolder}/jni/opencv/OpenCV-android-sdk/sdk/native/jni/include"
+      ],
+      "defines": [
+        "__ANDROID__",
+        "ANDROID"
+      ],
+      "compilerPath": "${env:ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/windows-x86_64/bin/clang",
+      "cStandard": "c17",
+      "cppStandard": "c++17",
+      "intelliSenseMode": "gcc-arm",
+      "browse": {
+        "path": [
+          "${workspaceFolder}",
+          "${env:ANDROID_NDK_HOME}/sources"
+        ],
+        "limitSymbolsToIncludedHeaders": true,
+        "databaseFilename": ""
+      }
+    }
+  ],
+  "version": 4
+}

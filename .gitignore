@@ -1,0 +1,20 @@
+# Android
+.gradle/
+local.properties
+*.iml
+.cxx/
+build/
+captures/
+.externalNativeBuild/
+
+# VS Code
+.vscode/*.log
+
+# Web
+web/dist/
+node_modules/
+
+# Gradle
+gradle/
+gradlew
+gradlew.bat

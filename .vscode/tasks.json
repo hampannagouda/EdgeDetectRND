@@ -1,0 +1,24 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build Android",
+      "type": "shell",
+      "command": "./gradlew",
+      "args": ["app:assembleDebug"],
+      "group": "build"
+    },
+    {
+      "label": "Build Web TS",
+      "type": "shell",
+      "command": "npx tsc -p web",
+      "group": "build"
+    },
+    {
+      "label": "Run Web",
+      "type": "shell",
+      "command": "npx live-server web --port=5500",
+      "isBackground": true
+    }
+  ]
+}
