@@ -1,0 +1,14 @@
+{
+  "name": "edge-detection-viewer",
+  "version": "1.0.0",
+  "description": "Minimal TypeScript web viewer for processed frames",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "npx serve dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  }
+}
