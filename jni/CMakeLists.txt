@@ -1,28 +1,19 @@
-cmake_minimum_required(VERSION 3.10.2)
+cmake_minimum_required(VERSION 3.18.1)
+project("edgedetectrnd")
 
-project(native-lib)
-
-# Path to OpenCV-android-sdk (jni folder contains OpenCVConfig.cmake)
+# OpenCV path (modify to your folder)
 set(OpenCV_DIR ${CMAKE_SOURCE_DIR}/opencv/OpenCV-android-sdk/sdk/native/jni)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+find_package(OpenCV REQUIRED core imgproc)
 
-# DO NOT use static C++ linking with OpenCV Android
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS}")
+add_library(native-lib SHARED native-lib.cpp)
 
-find_package(OpenCV REQUIRED)
-
-include_directories(${OpenCV_INCLUDE_DIRS})
-
-add_library(
-        native-lib
-        SHARED
-        native-lib.cpp
-)
+find_library(log-lib log)
+find_library(GLESv2-lib GLESv2)
 
 target_link_libraries(
         native-lib
         ${OpenCV_LIBS}
-        log
+        ${GLESv2-lib}
+        ${log-lib}
 )

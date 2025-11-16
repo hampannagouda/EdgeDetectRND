@@ -1,0 +1,7 @@
+[
+{
+  "directory": "C:/Users/80732/Desktop/EdgeDetectRND/app/.cxx/RelWithDebInfo/191y1h82/arm64-v8a",
+  "command": "C:\\Users\\80732\\AppData\\Local\\Android\\Sdk\\ndk\\25.2.9519653\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang++.exe --target=aarch64-none-linux-android24 --sysroot=C:/Users/80732/AppData/Local/Android/Sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/windows-x86_64/sysroot -Dnative_lib_EXPORTS -isystem C:/Users/80732/Desktop/EdgeDetectRND/jni/opencv/OpenCV-android-sdk/sdk/native/jni/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security  -std=c++17 -O2 -g -DNDEBUG -fPIC -o CMakeFiles\\native-lib.dir\\native-lib.cpp.o -c C:\\Users\\80732\\Desktop\\EdgeDetectRND\\jni\\native-lib.cpp",
+  "file": "C:\\Users\\80732\\Desktop\\EdgeDetectRND\\jni\\native-lib.cpp"
+}
+]

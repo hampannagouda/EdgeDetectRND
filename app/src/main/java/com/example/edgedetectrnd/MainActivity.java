@@ -5,25 +5,21 @@ import android.content.pm.PackageManager;
 import android.graphics.SurfaceTexture;
 import android.os.Bundle;
 import android.view.TextureView;
-import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-import androidx.annotation.NonNull;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 public class MainActivity extends AppCompatActivity {
 
     private TextureView textureView;
-    private CameraRenderer cameraRenderer;
     private Button toggleButton;
     private TextView fpsText;
-    private boolean isEdgeMode = true;
+    private boolean isEdge = true;
 
-    static {
-        System.loadLibrary("native-lib");
-    }
+    private CameraRenderer cameraRenderer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,6 +30,13 @@ public class MainActivity extends AppCompatActivity {
         toggleButton = findViewById(R.id.toggleButton);
         fpsText = findViewById(R.id.fpsText);
 
+        toggleButton.setOnClickListener(v -> {
+            isEdge = !isEdge;
+            toggleButton.setText(isEdge ? "Edge" : "Raw");
+            if (cameraRenderer != null)
+                cameraRenderer.setEdgeMode(isEdge);
+        });
+
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,
@@ -41,45 +44,64 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        setupCamera();
+        initTextureView();
     }
 
-    private void setupCamera() {
+    private void initTextureView() {
         textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override
             public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-                cameraRenderer = new CameraRenderer(MainActivity.this, surface, width, height);
+
+                NativeBridge.initOpenGL(width, height);
+
+                // FIXED: DO NOT USE LAMBDA HERE
+                NativeBridge.setFpsCallback(new NativeBridge.FpsCallback() {
+                    @Override
+                    public void onFps(float fps) {
+                        runOnUiThread(() ->
+                                fpsText.setText(String.format("FPS: %.1f", fps))
+                        );
+                    }
+                });
+
+                cameraRenderer = new CameraRenderer(
+                        MainActivity.this,
+                        surface,
+                        width,
+                        height
+                );
+
+                cameraRenderer.setEdgeMode(isEdge);
+
+                cameraRenderer.setFpsCallback(fps ->
+                        runOnUiThread(() -> fpsText.setText("FPS: " + fps)));
+
                 cameraRenderer.startCamera();
-                cameraRenderer.setFpsCallback(fps -> runOnUiThread(() -> fpsText.setText("FPS: " + fps)));
             }
 
-            @Override public void onSurfaceTextureSizeChanged(SurfaceTexture s, int w, int h) {}
-            @Override public boolean onSurfaceTextureDestroyed(SurfaceTexture s) { return true; }
-            @Override public void onSurfaceTextureUpdated(SurfaceTexture s) {}
-        });
+            @Override public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int w, int h) {}
 
-        toggleButton.setOnClickListener(v -> {
-            isEdgeMode = !isEdgeMode;
-            toggleButton.setText(isEdgeMode ? "Edge" : "Raw");
-            if (cameraRenderer != null) {
-                cameraRenderer.setEdgeMode(isEdgeMode);
+            @Override public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+                NativeBridge.cleanup();
+                if (cameraRenderer != null) cameraRenderer.stopCamera();
+                return true;
             }
+
+            @Override public void onSurfaceTextureUpdated(SurfaceTexture surface) {}
         });
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] results) {
-        super.onRequestPermissionsResult(requestCode, permissions, results);
-        if (requestCode == 100 && results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) {
-            setupCamera();
+    public void onRequestPermissionsResult(
+            int requestCode, String[] permissions, int[] grantResults) {
+
+        if (requestCode == 100 &&
+                grantResults.length > 0 &&
+                grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            recreate();
         } else {
-            Toast.makeText(this, "Camera permission required", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Camera permission required", Toast.LENGTH_LONG).show();
+            finish();
         }
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (cameraRenderer != null) cameraRenderer.stopCamera();
     }
 }

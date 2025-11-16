@@ -1,0 +1,7 @@
+R_DEF: Internal format may change without notice
+local
+id fpsText
+id textureView
+id toggleButton
+layout activity_main
+style AppTheme

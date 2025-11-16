@@ -8,10 +8,13 @@ import android.media.ImageReader;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.view.Surface;
+
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public class CameraRenderer implements ImageReader.OnImageAvailableListener {
+
+    private final Context context;
 
     private CameraDevice cameraDevice;
     private CameraCaptureSession captureSession;
@@ -19,10 +22,10 @@ public class CameraRenderer implements ImageReader.OnImageAvailableListener {
     private Handler backgroundHandler;
     private HandlerThread backgroundThread;
     private GLTextureRenderer glRenderer;
-    private SurfaceTexture surfaceTexture;
+
     private Surface surface;
-    private Context context;
     private int width, height;
+
     private boolean isEdgeMode = true;
     private FpsCallback fpsCallback;
     private long lastFpsTime = 0;
@@ -32,13 +35,19 @@ public class CameraRenderer implements ImageReader.OnImageAvailableListener {
         void onFpsUpdate(int fps);
     }
 
-    public CameraRenderer(Context context, SurfaceTexture surfaceTexture, int width, int height) {
+    public CameraRenderer(Context context, SurfaceTexture texture, int width, int height) {
         this.context = context;
-        this.surfaceTexture = surfaceTexture;
         this.width = width;
         this.height = height;
-        this.surfaceTexture.setDefaultBufferSize(width, height);
-        this.surface = new Surface(surfaceTexture);
+
+        // ensure even dims (required for many YUV formats / OpenCV conversions)
+        if ((width % 2) != 0 || (height % 2) != 0) {
+            throw new IllegalArgumentException("width and height must be even. Got: " + width + "x" + height);
+        }
+
+        texture.setDefaultBufferSize(width, height);
+        this.surface = new Surface(texture);
+
         this.glRenderer = new GLTextureRenderer(width, height);
     }
 
@@ -61,86 +70,171 @@ public class CameraRenderer implements ImageReader.OnImageAvailableListener {
     }
 
     private void openCamera() {
-        CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+        CameraManager manager =
+                (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+
         try {
             String cameraId = manager.getCameraIdList()[0];
-            imageReader = ImageReader.newInstance(width, height, android.graphics.ImageFormat.YUV_420_888, 2);
+
+            imageReader = ImageReader.newInstance(
+                    width, height,
+                    android.graphics.ImageFormat.YUV_420_888, 2);
+
             imageReader.setOnImageAvailableListener(this, backgroundHandler);
 
             manager.openCamera(cameraId, new CameraDevice.StateCallback() {
                 @Override
                 public void onOpened(CameraDevice camera) {
                     cameraDevice = camera;
-                    createCaptureSession();
+                    createSession();
                 }
 
                 @Override public void onDisconnected(CameraDevice c) {}
                 @Override public void onError(CameraDevice c, int e) {}
             }, backgroundHandler);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void createCaptureSession() {
+    private void createSession() {
         try {
-            CaptureRequest.Builder requestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-            requestBuilder.addTarget(surface);
-            requestBuilder.addTarget(imageReader.getSurface());
+            CaptureRequest.Builder builder =
+                    cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
 
-            cameraDevice.createCaptureSession(Arrays.asList(surface, imageReader.getSurface()),
+            builder.addTarget(surface);
+            builder.addTarget(imageReader.getSurface());
+
+            cameraDevice.createCaptureSession(
+                    Arrays.asList(surface, imageReader.getSurface()),
                     new CameraCaptureSession.StateCallback() {
                         @Override
-                        public void onConfigured(CameraCaptureSession session) {
-                            captureSession = session;
+                        public void onConfigured(CameraCaptureSession s) {
+                            captureSession = s;
                             try {
-                                requestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-                                captureSession.setRepeatingRequest(requestBuilder.build(), null, backgroundHandler);
+                                builder.set(CaptureRequest.CONTROL_MODE,
+                                        CameraMetadata.CONTROL_MODE_AUTO);
+                                captureSession.setRepeatingRequest(
+                                        builder.build(), null, backgroundHandler);
                             } catch (Exception e) { e.printStackTrace(); }
                         }
 
                         @Override public void onConfigureFailed(CameraCaptureSession s) {}
-                    }, backgroundHandler);
-        } catch (Exception e) { e.printStackTrace(); }
+                    },
+                    backgroundHandler
+            );
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public void onImageAvailable(ImageReader reader) {
-        Image image = reader.acquireLatestImage();
-        if (image == null) return;
+        Image image = null;
+        try {
+            image = reader.acquireLatestImage();
+            if (image == null) return;
 
-        Image.Plane[] planes = image.getPlanes();
-        ByteBuffer yBuffer = planes[0].getBuffer();
-        ByteBuffer uBuffer = planes[1].getBuffer();
-        ByteBuffer vBuffer = planes[2].getBuffer();
+            // Convert to NV21 respecting strides/pixelStride
+            byte[] nv21 = imageToNV21(image);
+            if (nv21 == null) return;
 
-        int ySize = yBuffer.remaining();
-        int uSize = uBuffer.remaining();
-        int vSize = vBuffer.remaining();
+            // send to native (expects NV21 bytes)
+            NativeBridge.processFrame(nv21, width, height, isEdgeMode);
 
-        byte[] data = new byte[ySize + uSize + vSize];
-        yBuffer.get(data, 0, ySize);
-        vBuffer.get(data, ySize, vSize);
-        uBuffer.get(data, ySize + vSize, uSize);
+            // trigger GL draw (native updates GL texture)
+            glRenderer.updateTexture(null);
 
-        byte[] processed = NativeBridge.processFrame(data, width, height, isEdgeMode);
-        glRenderer.updateTexture(processed);
+            // FPS
+            frameCount++;
+            long now = System.currentTimeMillis();
+            if (now - lastFpsTime > 1000) {
+                if (fpsCallback != null)
+                    fpsCallback.onFpsUpdate(frameCount);
 
-        image.close();
-
-        // FPS
-        frameCount++;
-        long now = System.currentTimeMillis();
-        if (now - lastFpsTime > 1000) {
-            int fps = frameCount;
-            frameCount = 0;
-            lastFpsTime = now;
-            if (fpsCallback != null) fpsCallback.onFpsUpdate(fps);
+                frameCount = 0;
+                lastFpsTime = now;
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        } finally {
+            if (image != null) image.close();
         }
     }
 
+    /**
+     * Convert Image (YUV_420_888) to NV21 byte[] (Y + VU interleaved).
+     * This handles rowStride and pixelStride.
+     */
+    private byte[] imageToNV21(Image image) {
+        if (image == null) return null;
+
+        int width = image.getWidth();
+        int height = image.getHeight();
+        Image.Plane[] planes = image.getPlanes();
+
+        ByteBuffer yBuf = planes[0].getBuffer();
+        ByteBuffer uBuf = planes[1].getBuffer();
+        ByteBuffer vBuf = planes[2].getBuffer();
+
+        int yRowStride = planes[0].getRowStride();
+        int uRowStride = planes[1].getRowStride();
+        int vRowStride = planes[2].getRowStride();
+        int uPixelStride = planes[1].getPixelStride(); // could be 1 or 2
+
+        byte[] nv21 = new byte[width * height * 3 / 2];
+
+        // Copy Y plane
+        byte[] rowData = new byte[yRowStride];
+        int pos = 0;
+        yBuf.position(0);
+        for (int r = 0; r < height; r++) {
+            yBuf.position(r * yRowStride);
+            yBuf.get(rowData, 0, Math.min(yRowStride, yBuf.remaining()));
+            System.arraycopy(rowData, 0, nv21, pos, width);
+            pos += width;
+        }
+
+        // Copy interleaved VU (NV21 expects V then U)
+        int chromaHeight = height / 2;
+        int chromaWidth = width / 2;
+        byte[] uRow = new byte[uRowStride];
+        byte[] vRow = new byte[vRowStride];
+
+        int uvPos = width * height;
+        uBuf.position(0);
+        vBuf.position(0);
+
+        for (int r = 0; r < chromaHeight; r++) {
+            int uRowStart = r * uRowStride;
+            int vRowStart = r * vRowStride;
+
+            // read rows (take care not to overflow)
+            uBuf.position(uRowStart);
+            int uRead = Math.min(uRowStride, uBuf.remaining());
+            uBuf.get(uRow, 0, uRead);
+
+            vBuf.position(vRowStart);
+            int vRead = Math.min(vRowStride, vBuf.remaining());
+            vBuf.get(vRow, 0, vRead);
+
+            for (int c = 0; c < chromaWidth; c++) {
+                int uvIndexInRow = c * uPixelStride;
+                // defensive bounds check
+                byte U = (uvIndexInRow < uRow.length) ? uRow[uvIndexInRow] : 0;
+                byte V = (uvIndexInRow < vRow.length) ? vRow[uvIndexInRow] : 0;
+                nv21[uvPos++] = V;
+                nv21[uvPos++] = U;
+            }
+        }
+
+        return nv21;
+    }
+
     private void startBackgroundThread() {
-        backgroundThread = new HandlerThread("CameraBackground");
+        backgroundThread = new HandlerThread("CameraThread");
         backgroundThread.start();
         backgroundHandler = new Handler(backgroundThread.getLooper());
     }
@@ -148,7 +242,7 @@ public class CameraRenderer implements ImageReader.OnImageAvailableListener {
     private void stopBackgroundThread() {
         if (backgroundThread != null) {
             backgroundThread.quitSafely();
-            try { backgroundThread.join(); } catch (InterruptedException e) { e.printStackTrace(); }
+            try { backgroundThread.join(); } catch (Exception ignored) {}
         }
     }
 

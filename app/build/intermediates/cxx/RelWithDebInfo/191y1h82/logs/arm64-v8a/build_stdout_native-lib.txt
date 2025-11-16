@@ -1,0 +1,2 @@
+ninja: Entering directory `C:\Users\80732\Desktop\EdgeDetectRND\app\.cxx\RelWithDebInfo\191y1h82\arm64-v8a'
+ninja: no work to do.

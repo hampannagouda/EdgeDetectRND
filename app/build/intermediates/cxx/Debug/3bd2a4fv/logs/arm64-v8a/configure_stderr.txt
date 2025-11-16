@@ -1,0 +1,2 @@
+CMake Error: The source directory "C:/Users/80732/Desktop/EdgeDetectRND/app/jni" does not exist.
+Specify --help for usage, or press the help button on the CMake GUI.

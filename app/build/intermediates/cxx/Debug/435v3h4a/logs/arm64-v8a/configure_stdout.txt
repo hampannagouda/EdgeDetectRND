@@ -1,0 +1,4 @@
+-- Found OpenCV: C:/Users/80732/Desktop/EdgeDetectRND/jni/opencv/OpenCV-android-sdk (found version "4.8.0") found components: core imgproc 
+-- Configuring done
+-- Generating done
+-- Build files have been written to: C:/Users/80732/Desktop/EdgeDetectRND/app/.cxx/Debug/435v3h4a/arm64-v8a
