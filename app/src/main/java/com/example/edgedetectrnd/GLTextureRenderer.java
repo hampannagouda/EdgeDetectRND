@@ -115,7 +115,8 @@ public class GLTextureRenderer {
 
         // Bind texture from native code
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, NativeBridge.getTextureId());
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, NativeBridge.getNativeTextureId());
+
         GLES20.glUniform1i(textureHandle, 0);
 
         // Draw fullscreen quad

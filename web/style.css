@@ -1,0 +1,21 @@
+body {
+  background: #121212;
+  color: white;
+  font-family: Arial;
+  text-align: center;
+}
+
+#container {
+  margin-top: 30px;
+}
+
+#frame {
+  width: 320px;
+  border: 3px solid #4CAF50;
+}
+
+#fps {
+  margin-top: 20px;
+  font-size: 20px;
+  color: #00e676;
+}

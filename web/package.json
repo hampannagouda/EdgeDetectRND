@@ -2,6 +2,7 @@
   "name": "edge-detection-viewer",
   "version": "1.0.0",
   "description": "Minimal TypeScript web viewer for processed frames",
+  "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",

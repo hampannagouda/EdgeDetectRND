@@ -1,0 +1,16 @@
+# Android
+/.gradle/
+/*/build/
+local.properties
+*.iml
+.gradle
+/captures/
+.externalNativeBuild/
+
+# Node / Web
+web/node_modules/
+web/dist/
+
+# OS junk
+.DS_Store
+Thumbs.db

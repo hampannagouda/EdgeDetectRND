@@ -1,0 +1,24 @@
+{
+  "name": "edgedetectrnd",
+  "version": "1.0.0",
+  "description": "🚀 EdgeDetectRND – Real-Time Canny Edge Detection Viewer\r Android (Camera2 + OpenCV + OpenGL ES 2.0) · JNI · TypeScript Web Viewer",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hampannagouda/EdgeDetectRND.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/hampannagouda/EdgeDetectRND/issues"
+  },
+  "homepage": "https://github.com/hampannagouda/EdgeDetectRND#readme",
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
