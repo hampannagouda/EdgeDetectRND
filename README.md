@@ -1,66 +1,94 @@
-🚀 EdgeDetectRND – Real-Time Canny Edge Detection Viewer
-Android (Camera2 + OpenCV + OpenGL ES 2.0) · JNI · TypeScript Web Viewer
+EdgeDetectRND — Real-Time Edge Detection Framework (Android · OpenCV · OpenGL ES · Web)
 
-EdgeDetectRND is a high-performance, real-time computer vision pipeline integrating:
+A high-performance real-time computer vision pipeline combining Android Camera2, C++/JNI, OpenCV, and OpenGL ES 2.0.
+Includes a lightweight TypeScript web viewer to demonstrate multi-platform rendering of processed frames.
 
-Android Camera2 API
+This project was built as part of an R&D Engineering Assignment, showcasing expertise in low-level rendering, native performance optimization, and cross-platform visualization.
 
-JNI bridge between Java ↔ C++
+✨ Why This Project Stands Out
 
-OpenCV (C++) for Canny edge detection
+✔ Zero-copy camera pipeline using SurfaceTexture
+✔ Native NV21 → RGBA conversion with OpenCV
+✔ Real-time Canny Edge Detection (OpenCV C++)
+✔ GPU-accelerated rendering through OpenGL ES 2.0
+✔ JNI bridging with clean architecture
+✔ Raw ⇄ Edge mode toggle
+✔ Native FPS tracking
+✔ TypeScript web viewer that renders processed frames
+✔ Production-grade structure, ready for future enhancements
 
-OpenGL ES 2.0 for GPU texture rendering
-
-TypeScript web viewer for remote visualization
-
-Designed for speed, modularity, and clean architecture—ideal for R&D, computer vision prototyping, and real-time processing on mobile devices.
-
-✨ Key Features
-Feature	Status
-📸 Camera2 + SurfaceTexture Pipeline	✔️ Implemented
-🔗 JNI Bridge (Java ↔ C++)	✔️ Implemented
-⚡ OpenCV C++ Canny Edge Detection	✔️ Real-time
-🎨 OpenGL ES 2.0 GPU Texture Rendering	✔️ Optimized
-🔄 Toggle View (Raw ↔ Edge Mode)	✔️
-📊 Real-time FPS Counter	✔️
-🌐 TypeScript Web Viewer	✔️
-🧩 Modular, Clean Architecture	✔️
-🧹 Production-ready Codebase	✔️
-📸 Demo
-
-(Insert your demo GIF or screenshot here)
-
-
-🧠 System Architecture
-Camera2 API  
-↓ (ImageReader → YUV_420_888)
-Java (CameraRenderer)
-↓ (JNI - direct byte[] buffer)
-C++ (native-lib.cpp)
-↓ (OpenCV → cv::Mat → Canny)
-RGBA Output Buffer
-↓ (OpenGL ES texture upload)
-GL Renderer (Shader pipeline)
-↓
-Android Screen — Real-time output (12–30 FPS)
-
-Optional:
-C++ → saves sample frame → web viewer loads processed_sample.png
+🚀 Live Architecture Overview
+Android Camera2 (YUV_420_888)
+        ↓
+ImageReader → Java (CameraRenderer)
+        ↓ JNI Bridge (byte* → Mat)
+C++ Native Layer (OpenCV)
+        • NV21 → RGBA
+        • Canny Edge Detection
+        • FPS Calculation
+        ↓
+OpenGL ES 2.0 Renderer
+        ↓
+TextureView → Live Display
 
 
-Core advantages:
+Web Viewer Flow:
 
-Zero-copy texture updates
+static sample / base64 frame
+        ↓
+TypeScript (viewer.ts)
+        ↓
+Canvas / <img> rendering
 
-NV21 → RGBA optimized path
+📸 Preview
 
-Failsafe YUV stride handling
+(Add your screenshot or GIF here to showcase the output)
 
-Highly stable JNI interface
-🛠️ Project Setup
-1. Requirements
+Example placeholder:
 
-Android Studio Flamingo (or newer)
+screenshots/demo.png
+
+🧩 Project Structure
+EdgeDetectRND/
+ ├── app/                     # Android Java (Camera, GL, UI)
+ ├── jni/
+ │    ├── native-lib.cpp      # C++ | OpenCV | OpenGL ES pipeline
+ │    └── CMakeLists.txt
+ ├── web/
+ │    ├── src/                # TypeScript viewer
+ │    ├── dist/
+ │    └── package.json        # Web build scripts
+ ├── screenshots/
+ ├── README.md
+ └── .gitignore
+
+🛠️ Tech Stack
+Android
+
+Camera2 API
+
+TextureView + SurfaceTexture
+
+OpenGL ES 2.0
+
+JNI + Native C++
+
+OpenCV 4.x
+
+Web
+
+TypeScript
+
+ES Modules
+
+Lightweight static viewer
+
+Canvas / DOM rendering
+
+⚙️ Setup Instructions
+1️⃣ Prerequisites
+
+Android Studio Hedgehog / Iguana or newer
 
 NDK r25c+
 
@@ -68,113 +96,107 @@ CMake 3.22+
 
 OpenCV Android SDK 4.8.0+
 
-Node.js (for web viewer)
+Node.js LTS (for web viewer)
 
-2. Install & Configure OpenCV
+2️⃣ Install OpenCV
 
-Download OpenCV Android package:
-https://opencv.org/releases/
+Download OpenCV Android SDK:
+🔗 https://opencv.org/releases/
 
-Extract and place inside the project:
+Extract and place:
 
-EdgeDetectRND/jni/opencv/OpenCV-android-sdk/
+jni/opencv/OpenCV-android-sdk/
 
-
-CMake automatically detects OpenCV modules.
-
-3. Configure Build Settings
-
-Inside app/build.gradle:
-
-android {
-    ndkVersion "25.2.9519653"
-
-    externalNativeBuild {
-        cmake {
-            path "jni/CMakeLists.txt"
-        }
-    }
-}
-
-4. Build & Run (Android App)
+3️⃣ Build & Run Android App
 
 Open project in Android Studio
 
-Wait for Gradle sync
+Sync Gradle
 
-Run on real device (API 24+)
+Connect a device (API 24+)
 
-Allow camera permission
+Run → Grant camera permission
 
-Enjoy real-time edge detection!
+You should now see a real-time processed camera feed with an Edge / Raw toggle and FPS counter.
 
-🌐 Web Viewer (TypeScript)
-
-Navigate to web/ folder:
-
+4️⃣ Web Viewer Setup
 cd web
 npm install
-npx tsc
-npx live-server dist
+npm run build
+npm run start
 
 
-The web viewer loads:
+Then open:
 
-Last processed sample image: processed_sample.png
+http://localhost:3000
 
-Live FPS + resolution metadata
 
-Great for showcasing output in presentations.
+This loads a dummy processed frame (static image), proving cross-platform renderability.
 
-🎁 Bonus Capabilities
+🧠 Deep-Dive: Native Processing Flow
+1. Frame Acquisition
 
-Raw ↔ Edge toggle using OpenCV flag
+Camera frames arrive as YUV_420_888.
+We convert to NV21 respecting row + pixel stride.
 
-Custom shader support (easy to add grayscale / blur / Sobel)
+2. JNI Transfer
 
-FPS callback from C++ → Java (JNI safe)
+NV21 byte array → C++ via processFrame().
 
-Modular camera pipeline for future ML inference
+3. OpenCV Processing
 
-Full OpenGL texture pipeline ready for PBO or compute shaders
+cvtColor(NV21 → RGBA)
 
-📂 Repository Structure
-EdgeDetectRND/
-│
-├── app/                     # Android application
-│   ├── java/com/...         # MainActivity, CameraRenderer, GLRenderer, NativeBridge
-│   ├── res/layout/          # UI layout (TextureView + Controls)
-│   └── AndroidManifest.xml
-│
-├── jni/
-│   ├── native-lib.cpp       # OpenCV + OpenGL pipeline (C++)
-│   ├── CMakeLists.txt
-│   └── opencv/              # OpenCV Android SDK
-│
-├── web/                     # TypeScript web viewer
-│
-└── README.md                # Project documentation
+optional Canny(gray) edge mask
 
-🏆 Why This Project Stands Out
+merge back to RGBA for GL
 
-✔ Professional R&D-grade architecture
-✔ Fully optimized JNI + OpenCV + OpenGL pipeline
-✔ Suitable for CV/AI experiments and demos
-✔ Clean & production-ready code
-✔ Runs efficiently on most Android devices
+4. OpenGL ES Texture Update
 
-👨‍💻 Author & Contributions
+Updated RGBA buffer is pushed via:
 
-Developed as part of an advanced R&D intern assessment demonstrating:
+glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, rgbaMat.data);
 
-Low-level camera handling
 
-Native C++ performance optimization
+Rendering handled in GLTextureRenderer.
 
-Real-time graphics/shader programming
+5. FPS Callback
 
-Cross-platform image visualization
+C++ computes FPS and invokes Java callback via JNI global reference.
 
-📜 License
+🔮 Future Enhancements (Optional)
 
-This project is free to use for learning, research, and non-commercial purposes.
+WebSocket live streaming to browser
+
+PBO-based async texture upload
+
+GPU-based Canny (compute shaders)
+
+Flutter/WebAssembly viewer
+
+AI-powered real-time segmentation
+
+
+🤝 Contributions
+
+PRs, suggestions, and improvements are welcome!
+
+🏁 Final Note
+
+This repository demonstrates mastery of:
+
+Android low-level camera APIs
+
+Native C++ development
+
+OpenCV image processing
+
+GPU rendering
+
+Cross-platform architecture
+
+Clean engineering practices
+
+Use this as a strong showcase of your technical depth.
+
+Thank You!.
